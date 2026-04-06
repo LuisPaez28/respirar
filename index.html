@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindfulness - Respiración Guiada</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2; 
+            --secondary-color: #2C3E50;
+            --bg-color: #F0F4F8;
+            --card-bg: #FFFFFF;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* --- Vistas --- */
+        .screen {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* --- Pantalla de Inicio (Tarjetas) --- */
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: var(--secondary-color);
+        }
+
+        .card p {
+            margin: 0 0 15px 0;
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* --- Pantalla de Respiración --- */
+        .breathing-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 50px;
+        }
+
+        .breathing-circle {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #85C1E9 0%, #3498DB 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform linear;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #message {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+            font-weight: bold;
+            text-align: center;
+            min-height: 60px;
+        }
+
+        /* --- Botones --- */
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            width: 100%;
+            max-width: 250px;
+        }
+
+        .btn-start {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-start:hover { background-color: #357ABD; }
+
+        .btn-back {
+            background-color: transparent;
+            color: var(--secondary-color);
+            border: 2px solid var(--secondary-color);
+            margin-top: 20px;
+        }
+
+        .btn-back:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="homeScreen" class="screen">
+        <h1>Centro de Calma</h1>
+        <div class="cards-container" id="cardsContainer">
+            </div>
+    </div>
+
+    <div id="breathingScreen" class="screen hidden">
+        <h1 id="exerciseTitle">Ejercicio</h1>
+        
+        <div class="breathing-container">
+            <div id="message">Prepárate...</div>
+
+            <div class="breathing-circle" id="circle">
+                <span id="instructionText">Respira</span>
+            </div>
+
+            <button class="btn-back" onclick="goBack()">Volver al Inicio</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. BASE DE DATOS DE TÉCNICAS
+        const techniques = [
+            { id: 'box', name: "Respiración de Caja (4-4-4-4)", desc: "Resetea el sistema nervioso. Ideal para reducir el estrés agudo, ataques de pánico o antes de una situación tensa. Usada por militares para mantener la calma.", times: { inhale: 4000, hold1: 4000, exhale: 4000, hold2: 4000 } },
+            { id: 'relax', name: "Relajación Profunda (4-7-8)", desc: "Actúa como un tranquilizante natural. Excelente para combatir el insomnio y la ansiedad. Relaja el cuerpo profundamente para dormir.", times: { inhale: 4000, hold1: 7000, exhale: 8000, hold2: 0 } },
+            { id: 'coherent', name: "Respiración Coherente (5.5 - 5.5)", desc: "El ritmo natural de descanso. Equilibra el sistema nervioso y mejora la salud cardiovascular. Perfecta para pausas durante el trabajo.", times: { inhale: 5500, hold1: 0, exhale: 5500, hold2: 0 } },
+            { id: 'energy', name: "Respiración Energizante (4-2)", desc: "Al inhalar más tiempo del que exhalas, aceleras suavemente el corazón y oxigenas el cerebro. Úsala por la mañana o cuando sientas sueño.", times: { inhale: 4000, hold1: 0, exhale: 2000, hold2: 0 } }
+        ];
+
+        // 2. REFERENCIAS AL DOM
+        const homeScreen = document.getElementById('homeScreen');
+        const breathingScreen = document.getElementById('breathingScreen');
+        const cardsContainer = document.getElementById('cardsContainer');
+        const exerciseTitle = document.getElementById('exerciseTitle');
+        const circle = document.getElementById('circle');
+        const instructionText = document.getElementById('instructionText');
+        const messageDisplay = document.getElementById('message');
+
+        // 3. MOTOR DE AUDIO (Precarga)
+        const audioInhala = new Audio('inhala.mp3');
+        const audioManten = new Audio('manten.mp3');
+        const audioExhala = new Audio('exhala.mp3');
+        const audioFin = new Audio('fin.mp3');
+
+        // Función segura para reproducir audio
+        function playAudio(audioObj) {
+            audioObj.currentTime = 0; 
+            audioObj.play().catch(err => console.log("Audio en espera de interacción del usuario"));
+        }
+
+        // 4. VARIABLES DE ESTADO
+        let currentSessionId = 0; 
+        const totalCycles = 4; // Puedes ajustar el número de ciclos aquí
+
+        // 5. INICIALIZACIÓN (Dibujar menú)
+        function init() {
+            techniques.forEach(tech => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <h2>${tech.name}</h2>
+                    <p>${tech.desc}</p>
+                    <button class="btn-start" onclick="startSession('${tech.id}')">Iniciar Práctica</button>
+                `;
+                cardsContainer.appendChild(card);
+            });
+        }
+
+        // 6. LÓGICA DE LA RESPIRACIÓN
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function startSession(techId) {
+            const technique = techniques.find(t => t.id === techId);
+            const times = technique.times;
+            
+            currentSessionId++;
+            const mySessionId = currentSessionId;
+
+            homeScreen.classList.add('hidden');
+            breathingScreen.classList.remove('hidden');
+            
+            exerciseTitle.innerText = technique.name;
+            messageDisplay.innerText = "Cierra tus ojos y sigue mi voz...";
+            circle.style.transitionDuration = '0s'; 
+            circle.style.transform = 'scale(1)';
+
+            await sleep(2000); 
+
+            let cyclesCompleted = 0;
+
+            // Bucle de respiración
+            while (cyclesCompleted < totalCycles && mySessionId === currentSessionId) {
+                messageDisplay.innerText = `Ciclo ${cyclesCompleted + 1} de ${totalCycles}`;
+
+                // INHALAR
+                if (mySessionId !== currentSessionId) break;
+                playAudio(audioInhala);
+                instructionText.innerText = "Inhala...";
+                circle.style.transitionDuration = `${times.inhale}ms`;
+                circle.style.transform = 'scale(1.6)';
+                await sleep(times.inhale);
+
+                // MANTENER (Lleno)
+                if (times.hold1 > 0) {
+                    if (mySessionId !== currentSessionId) break;
+                    playAudio(audioManten);
+                    instructionText.innerText = "Mantén...";
+                    await sleep(times.hold1);
+                }
+
+                // EXHALAR
+                if (mySessionId !== currentSessionId) break;
+                    playAudio(audioExhala);
+                instructionText.innerText = "Suelta el aire...";
+                circle.style.transitionDuration = `${times.exhale}ms`;
+                circle.style.transform = 'scale(1)';
+                await sleep(times.exhale);
+
+                // MANTENER (Vacío)
+                if (times.hold2 > 0) {
+                    if (mySessionId !== currentSessionId) break;
+                    playAudio(audioManten);
+                    instructionText.innerText = "Mantén...";
+                    await sleep(times.hold2);
+                }
+
+                cyclesCompleted++;
+            }
+
+            // Al terminar de forma natural
+            if (mySessionId === currentSessionId) {
+                playAudio(audioFin);
+                instructionText.innerText = "Paz";
+                messageDisplay.innerText = "¡Gracias por dedicarte este tiempo a ti mismo!";
+                circle.style.transitionDuration = "2s";
+                circle.style.transform = 'scale(1)';
+            }
+        }
+
+        // 7. VOLVER AL INICIO
+        function goBack() {
+            currentSessionId++; 
+            
+            // Detener cualquier audio que esté sonando
+            audioInhala.pause();
+            audioManten.pause();
+            audioExhala.pause();
+            
+            circle.style.transitionDuration = "0.3s";
+            circle.style.transform = 'scale(1)';
+            instructionText.innerText = "Respira";
+
+            breathingScreen.classList.add('hidden');
+            homeScreen.classList.remove('hidden');
+        }
+
+        // Iniciar la app
+        init();
+    </script>
+</body>
+</html>
